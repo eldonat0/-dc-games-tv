@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -15,15 +16,18 @@ import android.os.Handler;
 import android.text.InputType;
 import android.util.Base64;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.MediaController;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
@@ -46,14 +50,18 @@ import java.util.concurrent.Executors;
 public class MainActivity extends Activity {
     private LinearLayout root;
     private TextView clock;
+    private TextView heroTitle;
+    private TextView heroSubtitle;
+    private TextView heroDescription;
+    private ImageView heroIcon;
     private final Handler handler = new Handler();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+    private final SimpleDateFormat timeFormat = new SimpleDateFormat("h:mm a", Locale.US);
     private SharedPreferences prefs;
 
     private final Runnable clockTick = new Runnable() {
         @Override public void run() {
-            if (clock != null) clock.setText(timeFormat.format(new Date()));
+            if (clock != null) clock.setText(timeFormat.format(new Date()).toUpperCase(Locale.US));
             handler.postDelayed(this, 1000);
         }
     };
@@ -69,105 +77,159 @@ public class MainActivity extends Activity {
         prefs = getSharedPreferences("dc_games_tv", MODE_PRIVATE);
         showHome();
         handler.post(clockTick);
-        handler.postDelayed(() -> Toast.makeText(this,
-                "Bienvenido a DC GAMES TV by El Donat0", Toast.LENGTH_LONG).show(), 450);
     }
 
     private void showHome() {
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(52), dp(24), dp(52), dp(30));
-        root.setBackground(makeGradient(Color.rgb(5, 10, 18), Color.rgb(18, 31, 49), 0));
+        root.setPadding(dp(48), dp(20), dp(48), dp(28));
+        root.setBackground(makeGradient(Color.rgb(4, 10, 18), Color.rgb(10, 36, 64), 0));
 
         LinearLayout top = new LinearLayout(this);
         top.setOrientation(LinearLayout.HORIZONTAL);
         top.setGravity(Gravity.CENTER_VERTICAL);
 
-        LinearLayout brandBox = new LinearLayout(this);
-        brandBox.setOrientation(LinearLayout.HORIZONTAL);
-        brandBox.setGravity(Gravity.CENTER_VERTICAL);
-
         ImageView logo = new ImageView(this);
-        byte[] decoded = Base64.decode(LogoData.JPG_BASE64, Base64.DEFAULT);
-        logo.setImageBitmap(BitmapFactory.decodeByteArray(decoded, 0, decoded.length));
+        try {
+            byte[] decoded = Base64.decode(LogoData.JPG_BASE64, Base64.DEFAULT);
+            logo.setImageBitmap(BitmapFactory.decodeByteArray(decoded, 0, decoded.length));
+        } catch (Exception ignored) {}
         logo.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        brandBox.addView(logo, new LinearLayout.LayoutParams(dp(230), dp(150)));
+        top.addView(logo, new LinearLayout.LayoutParams(dp(250), dp(128)));
 
         LinearLayout brandText = new LinearLayout(this);
         brandText.setOrientation(LinearLayout.VERTICAL);
-        brandText.setPadding(dp(16), 0, 0, 0);
-        TextView brand = text("DC GAMES TV", 30, Color.WHITE, true);
-        TextView by = text("BY 3L Donat0", 18, Color.rgb(255, 196, 64), false);
+        TextView brand = text("DC GAMES TV", 26, Color.WHITE, true);
+        TextView by = text("BY 3L Donat0", 16, Color.rgb(255, 194, 64), true);
         brandText.addView(brand);
         brandText.addView(by);
-        brandBox.addView(brandText);
-        top.addView(brandBox, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        top.addView(brandText, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
 
-        clock = text(timeFormat.format(new Date()), 46, Color.WHITE, true);
+        clock = text(timeFormat.format(new Date()).toUpperCase(Locale.US), 48, Color.WHITE, true);
         clock.setGravity(Gravity.END);
-        top.addView(clock, new LinearLayout.LayoutParams(dp(240), ViewGroup.LayoutParams.WRAP_CONTENT));
+        top.addView(clock, new LinearLayout.LayoutParams(dp(270), ViewGroup.LayoutParams.WRAP_CONTENT));
         root.addView(top);
 
-        TextView welcome = text("Bienvenido a DC GAMES TV by El Donat0", 18, Color.rgb(185, 198, 216), false);
-        welcome.setPadding(0, dp(2), 0, dp(18));
+        LinearLayout hero = new LinearLayout(this);
+        hero.setOrientation(LinearLayout.HORIZONTAL);
+        hero.setGravity(Gravity.CENTER_VERTICAL);
+        hero.setPadding(dp(24), dp(14), dp(24), dp(14));
+        hero.setBackground(makeGradient(Color.rgb(19, 44, 72), Color.rgb(10, 22, 38), dp(24)));
+
+        LinearLayout heroWords = new LinearLayout(this);
+        heroWords.setOrientation(LinearLayout.VERTICAL);
+        heroTitle = text("YOUTUBE", 48, Color.WHITE, true);
+        heroSubtitle = text("VIDEOS", 19, Color.rgb(102, 196, 255), true);
+        heroDescription = text("Tus videos y canales favoritos desde una pantalla limpia y rápida.", 17, Color.rgb(210, 220, 232), false);
+        heroDescription.setMaxLines(2);
+        heroDescription.setPadding(0, dp(8), dp(18), 0);
+        heroWords.addView(heroTitle);
+        heroWords.addView(heroSubtitle);
+        heroWords.addView(heroDescription);
+        hero.addView(heroWords, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+
+        heroIcon = new ImageView(this);
+        heroIcon.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        hero.addView(heroIcon, new LinearLayout.LayoutParams(dp(150), dp(110)));
+        root.addView(hero, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(170)));
+
+        TextView welcome = text("Bienvenido a DC GAMES TV by El Donat0", 16, Color.rgb(164, 184, 205), false);
+        welcome.setPadding(dp(4), dp(12), 0, dp(4));
         root.addView(welcome);
 
         LinearLayout cards = new LinearLayout(this);
         cards.setOrientation(LinearLayout.HORIZONTAL);
-        cards.setGravity(Gravity.CENTER);
+        cards.setGravity(Gravity.CENTER_VERTICAL);
 
-        addCard(cards, "YOUTUBE", "Videos", () -> launchAny(
-                "com.amazon.firetv.youtube", "com.google.android.youtube.tv", "com.google.android.youtube"));
-        addCard(cards, "SPOTIFY", "Música", () -> launchAny("com.spotify.tv.android", "com.spotify.music"));
-        addCard(cards, "TIKTOK", "Videos cortos", () -> launchAny("com.zhiliaoapp.musically", "com.ss.android.ugc.trill"));
-        addCard(cards, "NETFLIX", "Streaming", () -> launchAny("com.netflix.ninja", "com.netflix.mediaclient"));
-        addCard(cards, "PRIME VIDEO", "Streaming", () -> launchAny("com.amazon.amazonvideo.livingroom", "com.amazon.avod.thirdpartyclient"));
-        addCard(cards, "IPTV", "TV en vivo", this::openIptv);
-        addCard(cards, "APPS", "Todas", this::openAppDrawer);
+        addCard(cards, "YOUTUBE", "Videos",
+                "Tus videos y canales favoritos desde una pantalla limpia y rápida.",
+                new String[]{"com.amazon.firetv.youtube", "com.google.android.youtube.tv", "com.google.android.youtube"},
+                () -> launchAny("com.amazon.firetv.youtube", "com.google.android.youtube.tv", "com.google.android.youtube"));
+        addCard(cards, "SPOTIFY", "Música",
+                "Música, playlists y podcasts en tu TV.",
+                new String[]{"com.spotify.tv.android", "com.spotify.music"},
+                () -> launchAny("com.spotify.tv.android", "com.spotify.music"));
+        addCard(cards, "TIKTOK", "Videos cortos",
+                "TikTok en pantalla grande cuando la app esté instalada.",
+                new String[]{"com.zhiliaoapp.musically", "com.ss.android.ugc.trill"},
+                () -> launchAny("com.zhiliaoapp.musically", "com.ss.android.ugc.trill"));
+        addCard(cards, "NETFLIX", "Streaming",
+                "Películas, series y documentales de Netflix.",
+                new String[]{"com.netflix.ninja", "com.netflix.mediaclient"},
+                () -> launchAny("com.netflix.ninja", "com.netflix.mediaclient"));
+        addCard(cards, "PRIME VIDEO", "Streaming",
+                "Películas y series de Prime Video.",
+                new String[]{"com.amazon.amazonvideo.livingroom", "com.amazon.avod.thirdpartyclient"},
+                () -> launchAny("com.amazon.amazonvideo.livingroom", "com.amazon.avod.thirdpartyclient"));
+        addCard(cards, "IPTV", "TV en vivo",
+                "Tu IPTV dentro de DC GAMES TV. Agrega tu URL M3U y carga tus canales.",
+                null, this::showIptvSetup);
+        addCard(cards, "APPS", "Todas",
+                "Abre el resto de las aplicaciones instaladas sin llenar el inicio.",
+                null, this::openAppDrawer);
 
-        root.addView(cards, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(150)));
+        root.addView(cards, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(138)));
 
-        TextView hint = text("Usa el control para moverte · OK para abrir", 15, Color.rgb(145, 158, 177), false);
-        hint.setPadding(0, dp(16), 0, 0);
+        TextView hint = text("Muévete con el control · OK para abrir", 14, Color.rgb(142, 162, 184), false);
+        hint.setPadding(dp(4), dp(8), 0, 0);
         root.addView(hint);
 
         setContentView(root);
         if (cards.getChildCount() > 0) cards.getChildAt(0).requestFocus();
     }
 
-    private void addCard(LinearLayout parent, String title, String subtitle, Runnable action) {
+    private void addCard(LinearLayout parent, String title, String subtitle, String description,
+                         String[] packages, Runnable action) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setGravity(Gravity.CENTER);
-        card.setPadding(dp(10), dp(12), dp(10), dp(12));
+        card.setPadding(dp(8), dp(10), dp(8), dp(10));
         card.setFocusable(true);
         card.setClickable(true);
         card.setBackground(cardBg(false));
 
-        TextView t = text(title, 18, Color.WHITE, true);
+        TextView t = text(title, 17, Color.WHITE, true);
         t.setGravity(Gravity.CENTER);
-        TextView s = text(subtitle, 13, Color.rgb(178, 190, 207), false);
+        TextView s = text(subtitle, 12, Color.rgb(175, 191, 210), false);
         s.setGravity(Gravity.CENTER);
-        s.setPadding(0, dp(5), 0, 0);
+        s.setPadding(0, dp(4), 0, 0);
         card.addView(t);
         card.addView(s);
 
         card.setOnFocusChangeListener((v, focused) -> {
             v.animate().scaleX(focused ? 1.08f : 1f).scaleY(focused ? 1.08f : 1f).setDuration(120).start();
             v.setBackground(cardBg(focused));
+            if (focused) updateHero(title, subtitle, description, packages);
         });
         card.setOnClickListener(v -> action.run());
 
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(118), 1);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(108), 1);
         lp.setMargins(dp(6), dp(8), dp(6), dp(8));
         parent.addView(card, lp);
     }
 
+    private void updateHero(String title, String subtitle, String description, String[] packages) {
+        heroTitle.setText(title);
+        heroSubtitle.setText(subtitle.toUpperCase(Locale.US));
+        heroDescription.setText(description);
+        heroIcon.setImageDrawable(null);
+        if (packages != null) {
+            PackageManager pm = getPackageManager();
+            for (String pkg : packages) {
+                try {
+                    Drawable icon = pm.getApplicationIcon(pkg);
+                    heroIcon.setImageDrawable(icon);
+                    return;
+                } catch (Exception ignored) {}
+            }
+        }
+    }
+
     private GradientDrawable cardBg(boolean focused) {
         GradientDrawable g = new GradientDrawable();
-        g.setCornerRadius(dp(16));
-        g.setColor(focused ? Color.rgb(37, 94, 153) : Color.rgb(26, 34, 46));
-        g.setStroke(dp(focused ? 3 : 1), focused ? Color.WHITE : Color.rgb(58, 69, 84));
+        g.setCornerRadius(dp(18));
+        g.setColor(focused ? Color.rgb(18, 116, 194) : Color.rgb(23, 37, 54));
+        g.setStroke(dp(focused ? 3 : 1), focused ? Color.WHITE : Color.rgb(74, 96, 120));
         return g;
     }
 
@@ -197,8 +259,8 @@ public class MainActivity extends Activity {
         }
         new AlertDialog.Builder(this)
                 .setTitle("App no instalada")
-                .setMessage("No encontré esta app instalada en el Fire TV. Puedes instalarla y después aparecerá aquí automáticamente.")
-                .setPositiveButton("Abrir Apps", (d, w) -> openAppDrawer())
+                .setMessage("Esta app no está instalada en el Fire TV. Instálala y DC GAMES TV la detectará automáticamente.")
+                .setPositiveButton("Ver Apps", (d, w) -> openAppDrawer())
                 .setNegativeButton("Cerrar", null)
                 .show();
     }
@@ -231,51 +293,99 @@ public class MainActivity extends Activity {
                 .show();
     }
 
-    private void openIptv() {
-        String saved = prefs.getString("m3u_url", "");
-        String[] choices = saved.isEmpty()
-                ? new String[]{"Agregar lista M3U", "Abrir app IPTV instalada"}
-                : new String[]{"Cargar mi TV", "Cambiar lista M3U", "Abrir app IPTV instalada"};
+    private void showIptvSetup() {
+        LinearLayout page = new LinearLayout(this);
+        page.setOrientation(LinearLayout.VERTICAL);
+        page.setPadding(dp(70), dp(46), dp(70), dp(46));
+        page.setBackground(makeGradient(Color.rgb(5, 12, 21), Color.rgb(11, 42, 70), 0));
 
-        new AlertDialog.Builder(this)
-                .setTitle("IPTV · DC GAMES TV")
-                .setItems(choices, (d, which) -> {
-                    if (saved.isEmpty()) {
-                        if (which == 0) askM3u(); else launchAny("ar.tvplayer.tv", "com.nst.iptvsmarterstvbox", "com.ottplay.ottplay");
-                    } else {
-                        if (which == 0) loadM3u(saved);
-                        else if (which == 1) askM3u();
-                        else launchAny("ar.tvplayer.tv", "com.nst.iptvsmarterstvbox", "com.ottplay.ottplay");
-                    }
-                })
-                .setNegativeButton("Cerrar", null)
-                .show();
+        TextView title = text("IPTV", 50, Color.WHITE, true);
+        TextView sub = text("Configura tu lista M3U", 22, Color.rgb(93, 196, 255), true);
+        TextView help = text("Selecciona el campo, presiona OK y escribe la URL con el teclado del Fire TV.", 17, Color.rgb(205, 216, 230), false);
+        help.setPadding(0, dp(8), 0, dp(24));
+        page.addView(title);
+        page.addView(sub);
+        page.addView(help);
+
+        EditText urlInput = new EditText(this);
+        urlInput.setText(prefs.getString("m3u_url", ""));
+        urlInput.setHint("https://servidor.com/lista.m3u");
+        urlInput.setSingleLine(true);
+        urlInput.setTextSize(19);
+        urlInput.setTextColor(Color.WHITE);
+        urlInput.setHintTextColor(Color.rgb(130, 150, 170));
+        urlInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
+        urlInput.setFocusable(true);
+        urlInput.setFocusableInTouchMode(true);
+        urlInput.setPadding(dp(18), dp(14), dp(18), dp(14));
+        GradientDrawable inputBg = new GradientDrawable();
+        inputBg.setColor(Color.rgb(19, 35, 53));
+        inputBg.setCornerRadius(dp(14));
+        inputBg.setStroke(dp(2), Color.rgb(93, 196, 255));
+        urlInput.setBackground(inputBg);
+        page.addView(urlInput, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(64)));
+
+        LinearLayout buttons = new LinearLayout(this);
+        buttons.setOrientation(LinearLayout.HORIZONTAL);
+        buttons.setPadding(0, dp(22), 0, 0);
+
+        Button load = actionButton("GUARDAR Y CARGAR");
+        Button keyboard = actionButton("ABRIR TECLADO");
+        Button back = actionButton("VOLVER");
+        buttons.addView(load, buttonLp());
+        buttons.addView(keyboard, buttonLp());
+        buttons.addView(back, buttonLp());
+        page.addView(buttons);
+
+        TextView note = text("DC GAMES TV guarda esta URL solamente en este dispositivo.", 14, Color.rgb(145, 162, 181), false);
+        note.setPadding(0, dp(20), 0, 0);
+        page.addView(note);
+        setContentView(page);
+
+        Runnable openKeyboard = () -> {
+            urlInput.requestFocus();
+            urlInput.postDelayed(() -> {
+                InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                if (imm != null) imm.showSoftInput(urlInput, InputMethodManager.SHOW_IMPLICIT);
+            }, 180);
+        };
+        urlInput.setOnClickListener(v -> openKeyboard.run());
+        urlInput.setOnKeyListener((v, keyCode, event) -> {
+            if ((keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER)
+                    && event.getAction() == KeyEvent.ACTION_UP) {
+                openKeyboard.run();
+                return true;
+            }
+            return false;
+        });
+        keyboard.setOnClickListener(v -> openKeyboard.run());
+        load.setOnClickListener(v -> {
+            String value = urlInput.getText().toString().trim();
+            if (value.isEmpty()) {
+                Toast.makeText(this, "Escribe una URL M3U", Toast.LENGTH_LONG).show();
+                openKeyboard.run();
+                return;
+            }
+            prefs.edit().putString("m3u_url", value).apply();
+            loadM3u(value);
+        });
+        back.setOnClickListener(v -> showHome());
+        urlInput.requestFocus();
     }
 
-    private void askM3u() {
-        final EditText input = new EditText(this);
-        input.setHint("https://servidor/lista.m3u");
-        input.setSingleLine(true);
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        input.setText(prefs.getString("m3u_url", ""));
-        int pad = dp(24);
-        FrameLayout wrap = new FrameLayout(this);
-        wrap.setPadding(pad, 0, pad, 0);
-        wrap.addView(input);
+    private Button actionButton(String label) {
+        Button b = new Button(this);
+        b.setText(label);
+        b.setTextSize(15);
+        b.setAllCaps(false);
+        b.setFocusable(true);
+        return b;
+    }
 
-        new AlertDialog.Builder(this)
-                .setTitle("Lista M3U")
-                .setMessage("Pega la URL de tu proveedor autorizado. DC GAMES TV guardará esta dirección en el dispositivo.")
-                .setView(wrap)
-                .setPositiveButton("Guardar y cargar", (d, w) -> {
-                    String url = input.getText().toString().trim();
-                    if (!url.isEmpty()) {
-                        prefs.edit().putString("m3u_url", url).apply();
-                        loadM3u(url);
-                    }
-                })
-                .setNegativeButton("Cancelar", null)
-                .show();
+    private LinearLayout.LayoutParams buttonLp() {
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(58), 1);
+        lp.setMargins(dp(5), 0, dp(5), 0);
+        return lp;
     }
 
     private void loadM3u(String source) {
@@ -288,11 +398,11 @@ public class MainActivity extends Activity {
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setConnectTimeout(12000);
                 connection.setReadTimeout(15000);
-                connection.setRequestProperty("User-Agent", "DC-GAMES-TV/2.0");
+                connection.setRequestProperty("User-Agent", "DC-GAMES-TV/3.0");
                 BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                 String line;
                 String pendingName = null;
-                while ((line = br.readLine()) != null && channels.size() < 250) {
+                while ((line = br.readLine()) != null && channels.size() < 500) {
                     line = line.trim();
                     if (line.startsWith("#EXTINF")) {
                         int comma = line.lastIndexOf(',');
@@ -341,7 +451,7 @@ public class MainActivity extends Activity {
             video.start();
         });
         video.setOnErrorListener((mp, what, extra) -> {
-            Toast.makeText(this, "Este canal no pudo reproducirse con el motor básico de v2", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Este canal necesita un motor IPTV más avanzado", Toast.LENGTH_LONG).show();
             return true;
         });
         setContentView(video);
