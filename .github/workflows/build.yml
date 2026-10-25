@@ -4,6 +4,7 @@ on:
     branches: [ main ]
     paths-ignore:
       - 'a.apk'
+      - 'dcgames-v3.apk'
 permissions:
   contents: write
 concurrency:
@@ -25,12 +26,11 @@ jobs:
           gradle-version: '8.9'
       - name: Build APK
         run: gradle :app:assembleDebug
-      - name: Publish direct APK
+      - name: Publish v3 APK
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk a.apk
+          cp app/build/outputs/apk/debug/app-debug.apk dcgames-v3.apk
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add a.apk
-          git commit -m "Publish DC GAMES TV APK" || exit 0
-          git pull --rebase origin main
+          git add dcgames-v3.apk
+          git commit -m "Publish DC GAMES TV v3 APK" || exit 0
           git push origin HEAD:main
