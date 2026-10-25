@@ -2,29 +2,28 @@ package com.dcgames.tv;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
-import android.provider.Settings;
 import android.text.InputType;
+import android.util.Base64;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.MediaController;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.VideoView;
@@ -77,7 +76,7 @@ public class MainActivity extends Activity {
     private void showHome() {
         root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(52), dp(34), dp(52), dp(34));
+        root.setPadding(dp(52), dp(24), dp(52), dp(30));
         root.setBackground(makeGradient(Color.rgb(5, 10, 18), Color.rgb(18, 31, 49), 0));
 
         LinearLayout top = new LinearLayout(this);
@@ -85,12 +84,23 @@ public class MainActivity extends Activity {
         top.setGravity(Gravity.CENTER_VERTICAL);
 
         LinearLayout brandBox = new LinearLayout(this);
-        brandBox.setOrientation(LinearLayout.VERTICAL);
+        brandBox.setOrientation(LinearLayout.HORIZONTAL);
+        brandBox.setGravity(Gravity.CENTER_VERTICAL);
 
-        TextView brand = text("DC GAMES", 38, Color.WHITE, true);
-        TextView by = text("BY 3L Donat0", 20, Color.rgb(255, 196, 64), false);
-        brandBox.addView(brand);
-        brandBox.addView(by);
+        ImageView logo = new ImageView(this);
+        byte[] decoded = Base64.decode(LogoData.JPG_BASE64, Base64.DEFAULT);
+        logo.setImageBitmap(BitmapFactory.decodeByteArray(decoded, 0, decoded.length));
+        logo.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        brandBox.addView(logo, new LinearLayout.LayoutParams(dp(230), dp(150)));
+
+        LinearLayout brandText = new LinearLayout(this);
+        brandText.setOrientation(LinearLayout.VERTICAL);
+        brandText.setPadding(dp(16), 0, 0, 0);
+        TextView brand = text("DC GAMES TV", 30, Color.WHITE, true);
+        TextView by = text("BY 3L Donat0", 18, Color.rgb(255, 196, 64), false);
+        brandText.addView(brand);
+        brandText.addView(by);
+        brandBox.addView(brandText);
         top.addView(brandBox, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
 
         clock = text(timeFormat.format(new Date()), 46, Color.WHITE, true);
@@ -98,8 +108,8 @@ public class MainActivity extends Activity {
         top.addView(clock, new LinearLayout.LayoutParams(dp(240), ViewGroup.LayoutParams.WRAP_CONTENT));
         root.addView(top);
 
-        TextView welcome = text("Bienvenido a DC GAMES TV", 19, Color.rgb(185, 198, 216), false);
-        welcome.setPadding(0, dp(8), 0, dp(26));
+        TextView welcome = text("Bienvenido a DC GAMES TV by El Donat0", 18, Color.rgb(185, 198, 216), false);
+        welcome.setPadding(0, dp(2), 0, dp(18));
         root.addView(welcome);
 
         LinearLayout cards = new LinearLayout(this);
@@ -118,7 +128,7 @@ public class MainActivity extends Activity {
         root.addView(cards, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(150)));
 
         TextView hint = text("Usa el control para moverte · OK para abrir", 15, Color.rgb(145, 158, 177), false);
-        hint.setPadding(0, dp(20), 0, 0);
+        hint.setPadding(0, dp(16), 0, 0);
         root.addView(hint);
 
         setContentView(root);
